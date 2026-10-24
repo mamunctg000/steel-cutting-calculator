@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#173c32">
+<meta name="description" content="Steel Cutting Calculator: calculate required selling price after cutting, scrap value and job expenses.">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<title>Steel Cutting Calculator</title>
+<style>
+:root{--green:#173c32;--green2:#235848;--bg:#f3f6f4;--ink:#17231f;--muted:#66746d;--line:#dce5df;--white:#fff;--accent:#e6f1eb}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+header{background:var(--green);color:white;padding:22px 16px 20px;border-radius:0 0 22px 22px}
+.head{max-width:900px;margin:auto;display:flex;gap:12px;align-items:center}.logo{width:48px;height:48px;border-radius:14px;background:#fff;color:var(--green);display:grid;place-items:center;font-weight:900;font-size:17px;flex-shrink:0}
+h1{font-size:21px;line-height:1.2;margin:0 0 5px}header p{margin:0;color:#d7e8df;font-size:13px}
+main{max-width:900px;margin:16px auto;padding:0 12px 32px}.card{background:white;border:1px solid var(--line);border-radius:16px;padding:16px;margin:12px 0;box-shadow:0 3px 12px #173c3208}
+h2{font-size:16px;margin:0 0 13px}.sub{color:var(--muted);font-size:12px;margin:-7px 0 12px}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.field{min-width:0}.field label{display:block;font-size:12px;color:var(--muted);font-weight:650;margin:0 0 5px}
+input{width:100%;min-width:0;border:1px solid #cbd8d0;border-radius:10px;padding:11px 10px;font:inherit;background:#fff;color:var(--ink);outline:none}
+input:focus{border-color:var(--green2);box-shadow:0 0 0 3px #23584818}
+.beam{border:1px solid var(--line);border-radius:13px;padding:12px;margin:10px 0;background:#fcfdfc}.beam-top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}.beam-title{font-weight:750}.smallbtn{border:0;background:#fbe9e7;color:#9a3025;border-radius:8px;padding:7px 10px;font-weight:650}
+.actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}.btn{border:0;border-radius:11px;padding:12px 15px;font:inherit;font-weight:750;cursor:pointer}.primary{background:var(--green);color:#fff}.secondary{background:var(--accent);color:var(--green)}.ghost{background:#eef1ef;color:#35443d}
+.result{background:var(--green);color:white;border-radius:16px;padding:17px;margin:12px 0}.result .eyebrow{color:#cde0d5;font-size:12px;font-weight:700}.rate{font-size:36px;line-height:1.15;font-weight:850;margin:4px 0}.rate small{font-size:14px;font-weight:600}.result p{margin:6px 0 0;color:#d7e8df;font-size:12px}
+.stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.stat{background:#f7faf8;border:1px solid var(--line);border-radius:12px;padding:12px}.stat span{display:block;color:var(--muted);font-size:12px;margin-bottom:4px}.stat strong{font-size:17px;overflow-wrap:anywhere}
+.breakdown{width:100%;border-collapse:collapse;font-size:13px}.breakdown td{padding:9px 0;border-bottom:1px solid var(--line)}.breakdown td:last-child{text-align:right;font-weight:700;font-variant-numeric:tabular-nums}.breakdown tr:last-child td{border-bottom:0}
+.note{font-size:12px;color:var(--muted);line-height:1.5}.footer{text-align:center;color:var(--muted);font-size:11px;padding:8px}
+@media(min-width:640px){.grid{grid-template-columns:repeat(3,minmax(0,1fr))}.stats{grid-template-columns:repeat(4,minmax(0,1fr))}.rate{font-size:42px}}
+</style>
+</head>
+<body>
+<header><div class="head"><div class="logo">SC</div><div><h1>Steel Cutting Calculator</h1><p>Cutting price • Scrap value • Job expenses</p></div></div></header>
+<main>
+<section class="card">
+<h2>1. Beam & selling rates</h2>
+<div class="grid">
+<div class="field"><label for="kgft">Weight (kg per ft)</label><input id="kgft" type="number" min="0" step="0.01" value="21"></div>
+<div class="field"><label for="cutmm">Required cut length (mm)</label><input id="cutmm" type="number" min="0" step="1" value="4500"></div>
+<div class="field"><label for="normal">Normal selling rate (Tk/kg)</label><input id="normal" type="number" min="0" step="0.01" value="94"></div>
+<div class="field"><label for="scrap">Scrap selling rate (Tk/kg)</label><input id="scrap" type="number" min="0" step="0.01" value="48"></div>
+<div class="field"><label for="cutcost">Cutting cost (Tk/ft)</label><input id="cutcost" type="number" min="0" step="0.01" value="20"></div>
+</div>
+</section>
+<section class="card">
+<h2>2. Original beam lengths</h2>
+<p class="sub">Enter each beam's original length in feet. Example: 18 ft 3 in = 18.25 ft. Up to 20 pieces.</p>
+<div id="beams"></div>
+<div class="actions"><button class="btn secondary" id="add">＋ Add beam</button><button class="btn ghost" id="example">Load example</button></div>
+</section>
+<section class="card">
+<h2>3. Other expenses</h2>
+<div class="grid">
+<div class="field"><label for="transport">Transport total (Tk)</label><input id="transport" type="number" min="0" step="0.01" value="0"></div>
+<div class="field"><label for="hydraulic">Hydraulic total (Tk)</label><input id="hydraulic" type="number" min="0" step="0.01" value="0"></div>
+<div class="field"><label for="fixedother">Other fixed cost (Tk)</label><input id="fixedother" type="number" min="0" step="0.01" value="0"></div>
+<div class="field"><label for="loading">Loading (Tk/kg original)</label><input id="loading" type="number" min="0" step="0.001" value="0.350"></div>
+<div class="field"><label for="unloading">Unloading (Tk/kg original)</label><input id="unloading" type="number" min="0" step="0.001" value="0.200"></div>
+<div class="field"><label for="paint">Paint/colour (Tk/kg cut)</label><input id="paint" type="number" min="0" step="0.01" value="1"></div>
+<div class="field"><label for="otherkg">Other cost (Tk/kg cut)</label><input id="otherkg" type="number" min="0" step="0.01" value="0"></div>
+</div>
+<p class="note" style="margin:12px 0 0">If loading or unloading does not apply, set that field to 0.</p>
+</section>
+<section class="result" aria-live="polite">
+<div class="eyebrow">REQUIRED CUSTOMER RATE</div>
+<div class="rate" id="rate">Tk 0.00 <small>/ kg</small></div>
+<div id="rounded">Suggested whole-rupee rate: Tk 0/kg</div>
+<p>This rate includes the stock value retained after scrap sale plus all entered job expenses.</p>
+</section>
+<section class="card">
+<h2>Calculation summary</h2>
+<div class="stats">
+<div class="stat"><span>Original weight</span><strong id="origkg">0 kg</strong></div>
+<div class="stat"><span>Cut material</span><strong id="cutkg">0 kg</strong></div>
+<div class="stat"><span>Leftover scrap</span><strong id="scrapkg">0 kg</strong></div>
+<div class="stat"><span>Customer total</span><strong id="customer">Tk 0</strong></div>
+</div>
+<table class="breakdown" style="margin-top:12px">
+<tbody>
+<tr><td>Original stock value at normal rate</td><td id="stockvalue">Tk 0</td></tr>
+<tr><td>Less: leftover scrap sale value</td><td id="scrapvalue">− Tk 0</td></tr>
+<tr><td>Cutting cost</td><td id="cutvalue">Tk 0</td></tr>
+<tr><td>Loading + unloading</td><td id="loadvalue">Tk 0</td></tr>
+<tr><td>Paint + other per-kg cost</td><td id="kgvalue">Tk 0</td></tr>
+<tr><td>Transport + hydraulic + other fixed</td><td id="fixedvalue">Tk 0</td></tr>
+<tr><td><strong>Required customer amount</strong></td><td id="totalvalue"><strong>Tk 0</strong></td></tr>
+</tbody></table>
+<div class="actions"><button class="btn primary" id="copy">Copy calculation</button><button class="btn ghost" id="reset">Reset values</button></div>
+<p class="note" id="status" role="status"></p>
+</section>
+<div class="footer">Steel Cutting Calculator • Calculations run on this device</div>
+</main>
+<script>
+const $ = id => document.getElementById(id);
+const fields = ['kgft','cutmm','normal','scrap','cutcost','transport','hydraulic','fixedother','loading','unloading','paint','otherkg'];
+const money = n => 'Tk ' + (Number.isFinite(n)?n:0).toLocaleString('en-BD',{minimumFractionDigits:2,maximumFractionDigits:2});
+const num = id => Math.max(0, Number($(id).value) || 0);
+let beamCount = 0;
+function addBeam(length='') {
+  if (beamCount >= 20) { $('status').textContent='Maximum 20 beams allowed.'; return; }
+  beamCount++;
+  const div=document.createElement('div'); div.className='beam'; div.dataset.beam='1';
+  div.innerHTML=`<div class="beam-top"><div class="beam-title">Beam <span class="beam-num">${beamCount}</span></div><button type="button" class="smallbtn remove">Remove</button></div><div class="field"><label>Original length (ft)</label><input class="length" type="number" min="0" step="0.01" inputmode="decimal" placeholder="e.g. 18.25" value="${length}"></div><div class="note beam-result" style="margin-top:8px">Enter length to calculate this beam.</div>`;
+  div.querySelector('.length').addEventListener('input',calculate);
+  div.querySelector('.remove').addEventListener('click',()=>{div.remove();renumber();calculate();});
+  $('beams').appendChild(div); renumber(); calculate();
+}
+function renumber(){[...document.querySelectorAll('.beam')].forEach((b,i)=>b.querySelector('.beam-num').textContent=i+1);beamCount=document.querySelectorAll('.beam').length;}
+function calculate(){
+  const kgft=num('kgft'), cutFt=num('cutmm')/304.8, normal=num('normal'), scrapRate=num('scrap'), cutCost=num('cutcost');
+  let origKg=0, cutKg=0, scrapKg=0, totalCutFt=0;
+  [...document.querySelectorAll('.beam')].forEach((b)=>{
+    const len=Math.max(0,Number(b.querySelector('.length').value)||0);
+    const actualCutFt=Math.min(len,cutFt);
+    const ow=len*kgft, cw=actualCutFt*kgft, sw=Math.max(0,len-actualCutFt)*kgft;
+    origKg+=ow;cutKg+=cw;scrapKg+=sw;totalCutFt+=actualCutFt;
+    b.querySelector('.beam-result').textContent=`Original: ${ow.toFixed(2)} kg • Cut: ${cw.toFixed(2)} kg • Leftover: ${sw.toFixed(2)} kg`;
+  });
+  const stockValue=origKg*normal, scrapValue=scrapKg*scrapRate, cutting=totalCutFt*cutCost;
+  const loading=origKg*num('loading'), unloading=origKg*num('unloading');
+  const paint=cutKg*num('paint'), otherKg=cutKg*num('otherkg');
+  const fixed=num('transport')+num('hydraulic')+num('fixedother');
+  const expense=cutting+loading+unloading+paint+otherKg+fixed;
+  const required=stockValue-scrapValue+expense;
+  const rate=cutKg>0?required/cutKg:0;
+  $('rate').innerHTML=`${money(rate)} <small>/ kg</small>`;
+  $('rounded').textContent=`Suggested whole-rupee rate: Tk ${cutKg>0?Math.ceil(rate):0}/kg`;
+  $('origkg').textContent=`${origKg.toFixed(2)} kg`;$('cutkg').textContent=`${cutKg.toFixed(2)} kg`;$('scrapkg').textContent=`${scrapKg.toFixed(2)} kg`;
+  $('customer').textContent=money(required);$('stockvalue').textContent=money(stockValue);$('scrapvalue').textContent='− '+money(scrapValue);
+  $('cutvalue').textContent=money(cutting);$('loadvalue').textContent=money(loading+unloading);$('kgvalue').textContent=money(paint+otherKg);$('fixedvalue').textContent=money(fixed);$('totalvalue').innerHTML=`<strong>${money(required)}</strong>`;
+  window.lastCalc={origKg,cutKg,scrapKg,stockValue,scrapValue,cutting,loading,unloading,paint,otherKg,fixed,required,rate,rounded:cutKg>0?Math.ceil(rate):0};
+}
+fields.forEach(id=>$(id).addEventListener('input',calculate));
+$('add').addEventListener('click',()=>addBeam(''));
+$('example').addEventListener('click',()=>{ $('beams').innerHTML='';beamCount=0;addBeam('18.25');addBeam('17.5');$('kgft').value=21;$('cutmm').value=4500;$('normal').value=94;$('scrap').value=48;$('cutcost').value=20;calculate();});
+$('reset').addEventListener('click',()=>{fields.forEach(id=>{const el=$(id);const defaults={kgft:21,cutmm:4500,normal:94,scrap:48,cutcost:20,transport:0,hydraulic:0,fixedother:0,loading:.350,unloading:.200,paint:1,otherkg:0};el.value=defaults[id];});$('beams').innerHTML='';beamCount=0;addBeam('');$('status').textContent='Values reset.';calculate();});
+$('copy').addEventListener('click',async()=>{const c=window.lastCalc;const textOut=`STEEL CUTTING CALCULATION\nOriginal weight: ${c.origKg.toFixed(2)} kg\nCut material: ${c.cutKg.toFixed(2)} kg\nLeftover scrap: ${c.scrapKg.toFixed(2)} kg\nOriginal stock value: ${money(c.stockValue)}\nScrap sale value: ${money(c.scrapValue)}\nCutting cost: ${money(c.cutting)}\nLoading: ${money(c.loading)}\nUnloading: ${money(c.unloading)}\nPaint: ${money(c.paint)}\nOther per-kg: ${money(c.otherKg)}\nFixed expenses: ${money(c.fixed)}\nRequired customer amount: ${money(c.required)}\nRequired rate: ${money(c.rate)}/kg\nSuggested whole-rupee rate: Tk ${c.rounded}/kg`;
+try{await navigator.clipboard.writeText(textOut);$('status').textContent='Calculation copied.';}catch(e){$('status').textContent=textOut;}});
+if('serviceWorker' in navigator && location.protocol.startsWith('http')){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));}
+addBeam('18.25');addBeam('17.5');calculate();
+</script>
+</body></html>
